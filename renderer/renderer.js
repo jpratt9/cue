@@ -1356,15 +1356,24 @@
 
   function updateCustomProviderFields() {
     const provider = settings.provider;
+    let providerTakesAKey = false;
     document.querySelectorAll('[data-key-for]').forEach((el) => {
-      el.classList.toggle('hidden', el.dataset.keyFor !== provider);
+      const mine = el.dataset.keyFor === provider;
+      el.classList.toggle('hidden', !mine);
+      if (mine) providerTakesAKey = true;
     });
+    // Claude Code (session auth) and publik (managed key) have no field to put
+    // under this heading, so it would otherwise render over empty space.
+    const apiKeysLabel = $('#api-keys-label');
+    if (apiKeysLabel) apiKeysLabel.classList.toggle('hidden', !providerTakesAKey);
     $('#custom-endpoint-settings').classList.toggle('hidden', provider !== 'custom');
     $('#publik-settings').classList.toggle('hidden', provider !== 'publik');
     const minimaxRegionSettings = $('#minimax-region-settings');
     if (minimaxRegionSettings) minimaxRegionSettings.classList.toggle('hidden', provider !== 'minimax');
     const azureEndpointSettings = $('#azure-endpoint-settings');
     if (azureEndpointSettings) azureEndpointSettings.classList.toggle('hidden', provider !== 'azure');
+    const claudeCodeSettings = $('#claudecode-settings');
+    if (claudeCodeSettings) claudeCodeSettings.classList.toggle('hidden', provider !== 'claudecode');
     renderPublikBlock();
   }
 
@@ -1463,6 +1472,8 @@
     $('#key-cerebras').value = settings.apiKeys.cerebras || '';
     $('#key-openai').value = settings.apiKeys.openai || '';
     $('#key-anthropic').value = settings.apiKeys.anthropic || '';
+    const claudeCodeCliPath = $('#claudecode-cli-path');
+    if (claudeCodeCliPath) claudeCodeCliPath.value = (settings.claudeCode || {}).cliPath || '';
     $('#key-groq').value = settings.apiKeys.groq || '';
     $('#key-custom').value = settings.apiKeys.custom || '';
     $('#base-url').value = settings.baseUrl || '';
@@ -1546,7 +1557,7 @@
 
   function statusText() {
     const k = settings.apiKeys;
-    const labels = { publik: 'publik API', cerebras: 'Cerebras', openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Gemini', deepgram: 'Deepgram', custom: 'Custom', ollama: 'Ollama', groq: 'Groq', minimax: 'MiniMax', deepseek: 'DeepSeek', azure: 'Azure AI Foundry' };
+    const labels = { publik: 'publik API', cerebras: 'Cerebras', openai: 'OpenAI', anthropic: 'Anthropic', claudecode: 'Claude Code', gemini: 'Gemini', deepgram: 'Deepgram', custom: 'Custom', ollama: 'Ollama', groq: 'Groq', minimax: 'MiniMax', deepseek: 'DeepSeek', azure: 'Azure AI Foundry' };
     const has = Object.keys(labels).filter((p) => k[p]).map((p) => labels[p]);
     const publikPart = settings.provider === 'publik' && publikState
       ? ` · ${publikState.connected ? (publikState.balanceLabel ? `balance ${publikState.balanceLabel}` : 'connected') : 'not set up'}`
@@ -1732,6 +1743,11 @@
     settings.apiKeys.cerebras = $('#key-cerebras').value.trim();
     settings.apiKeys.openai = $('#key-openai').value.trim();
     settings.apiKeys.anthropic = $('#key-anthropic').value.trim();
+    const claudeCodeCliPathEl = $('#claudecode-cli-path');
+    if (claudeCodeCliPathEl) {
+      if (!settings.claudeCode) settings.claudeCode = {};
+      settings.claudeCode.cliPath = claudeCodeCliPathEl.value.trim();
+    }
     settings.apiKeys.groq = $('#key-groq').value.trim();
     settings.apiKeys.custom = $('#key-custom').value.trim();
     settings.baseUrl = $('#base-url').value.trim();
@@ -1751,7 +1767,10 @@
     // this, `settings.provider` stays on its default ('openai') forever and
     // cue keeps reporting itself unconfigured even though a valid key was
     // saved for the provider the user actually meant to use.
-    if (!settings.apiKeys[settings.provider]) {
+    // claudecode is exempt: it never has a key (the CLI carries the session
+    // auth), so without this guard selecting it and pressing Save would flip
+    // straight back to whichever provider happened to have a key stored.
+    if (settings.provider !== 'claudecode' && !settings.apiKeys[settings.provider]) {
       const keyedProviders = ['cerebras', 'openai', 'anthropic', 'gemini', 'groq', 'minimax', 'deepseek', 'azure'];
       const justFilled = keyedProviders.find((p) => settings.apiKeys[p]);
       if (justFilled) settings.provider = justFilled;

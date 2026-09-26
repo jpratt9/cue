@@ -6,6 +6,7 @@ const { captureScreenshot } = require('./src/screen');
 const { createSTT } = require('./src/stt');
 const { parseDocumentFile } = require('./src/resume');
 const { createLLM } = require('./src/llm');
+const claudeCode = require('./src/claude-code');
 const { MODES } = require('./src/prompts');
 const { rms16 } = require('./src/wav');
 const { createStreamingSTT } = require('./src/stt-streaming');
@@ -1461,6 +1462,8 @@ app.on('will-quit', () => {
     whisperModelManager.cancelDownload(whisperModelManager.activeDownload.modelId);
   }
   if (localWhisperTranscriber) localWhisperTranscriber.forceStop().catch(() => {});
+  // Pooled Claude Code CLI processes outlive a plain window close otherwise.
+  claudeCode.shutdown();
 });
 app.on('window-all-closed', (e) => {
   // Don't quit while the permissions window is open — the user may be in System Settings

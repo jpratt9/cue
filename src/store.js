@@ -34,6 +34,10 @@ const DEFAULTS = {
   minimaxRegion: 'global_en',
   apiKeys: { cerebras: '', openai: '', anthropic: '', gemini: '', deepgram: '', custom: '', ollama: '', groq: '', minimax: '', deepseek: '', azure: '', publik: '' },
   azureEndpoint: '',
+  // Optional override for where the `claude` binary lives. Empty means probe
+  // the standard install paths — needed because a packaged GUI app does not
+  // inherit the shell PATH that normally has `claude` on it.
+  claudeCode: { cliPath: '' },
   // publik API (packaged-build default). apiKeys.publik holds the minted key;
   // everything here is state the main process owns — the renderer only reads
   // a redacted view of it through publik:state and can never write it.
@@ -99,6 +103,10 @@ const DEFAULTS = {
     // llm.js's DEAD_ANTHROPIC_MODEL_RE self-heal additionally migrates any
     // settings file already saved with the old dead ids.
     anthropic: { fast: 'claude-haiku-4-5-20251001', smart: 'claude-sonnet-4-5-20250929' },
+    // Claude Code provider: the CLI takes model aliases and resolves each to
+    // the current release, so these need no migration when Anthropic ships a
+    // new Sonnet/Haiku. No API key — the CLI uses the user's own session.
+    claudecode: { fast: 'haiku', smart: 'sonnet' },
     // fast is kept in sync with CURRENT_GEMINI_DEFAULT in src/llm.js —
     // gemini-2.0-flash (the original default here) was retired by Google on
     // 2026-03-03 and 404s on every request. smart is the newest Pro release.

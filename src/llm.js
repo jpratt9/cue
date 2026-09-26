@@ -3,9 +3,11 @@
 
 const { createCompatibleClientOptions } = require('./openai-compatible');
 const publik = require('./publik');
+const claudeCode = require('./claude-code');
 
 const CUSTOM_PROVIDER = 'custom';
 const PUBLIK_PROVIDER = publik.PUBLIK_PROVIDER;
+const CLAUDE_CODE_PROVIDER = claudeCode.CLAUDE_CODE_PROVIDER;
 // gemini-2.0-flash was Google's default here until it was deprecated (Feb 2026)
 // and fully retired (Mar 3 2026) — every request against it now 404s with a
 // generic "exception parsing response" body. gemini-3.8-flash is the current
@@ -41,7 +43,8 @@ const DEFAULT_MODELS = {
   // (thinking), so those are the defaults used everywhere in this file.
   deepseek: 'deepseek-flash',
   azure: 'gpt-4o-mini',
-  publik: publik.DEFAULT_MODELS.fast
+  publik: publik.DEFAULT_MODELS.fast,
+  claudecode: claudeCode.DEFAULT_MODELS.fast
 };
 const CEREBRAS_BASE_URL = 'https://api.cerebras.ai/v1';
 
@@ -80,7 +83,7 @@ const DEAD_DEEPSEEK_MODEL_RE = /^deepseek-(chat|reasoner)$/i;
 const CURRENT_DEEPSEEK_FAST_DEFAULT = 'deepseek-flash';
 const CURRENT_DEEPSEEK_SMART_DEFAULT = 'deepseek-v4-pro';
 
-const PROVIDER_LABELS = { azure: 'Azure AI Foundry', cerebras: 'Cerebras', openai: 'OpenAI', minimax: 'MiniMax', publik: publik.PROVIDER_LABEL, deepseek: 'DeepSeek' };
+const PROVIDER_LABELS = { azure: 'Azure AI Foundry', cerebras: 'Cerebras', openai: 'OpenAI', minimax: 'MiniMax', publik: publik.PROVIDER_LABEL, deepseek: 'DeepSeek', claudecode: 'Claude Code' };
 
 // DeepSeek is OpenAI-compatible and reuses the OpenAI screenshot/streaming path via baseURL.
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
@@ -473,6 +476,7 @@ function createLLM(settings) {
     model = resolveGeminiModel(settings);
   }
   if (provider === PUBLIK_PROVIDER && !model) model = publik.DEFAULT_MODELS[tier];
+  if (provider === CLAUDE_CODE_PROVIDER && !model) model = claudeCode.DEFAULT_MODELS[tier];
   if (provider === 'anthropic' && DEAD_ANTHROPIC_MODEL_RE.test(model || '')) {
     model = tier === 'smart' ? CURRENT_ANTHROPIC_DEFAULT_SMART : CURRENT_ANTHROPIC_DEFAULT_FAST;
   }
@@ -505,8 +509,9 @@ function createLLM(settings) {
     if (!model && !configurationError) {
       configurationError = 'Set a Fast or Smart model for the Custom provider.';
     }
-  } else if (provider !== 'ollama' && !apiKey) {
+  } else if (provider !== 'ollama' && provider !== CLAUDE_CODE_PROVIDER && !apiKey) {
     // Ollama is a local server: the field holds a URL, and no key is required.
+    // Claude Code carries its own session auth in the CLI — no key either.
     configurationError = `Add your ${provider} API key in Settings.`;
   }
 
@@ -535,6 +540,13 @@ function createLLM(settings) {
         if (provider === 'minimax') return await streamOpenAI({ ...args, baseURL: MINIMAX_BASE_URLS[minimaxRegion] || MINIMAX_BASE_URLS.global_en });
         if (provider === 'deepseek') return await streamOpenAI({ ...args, baseURL: DEEPSEEK_BASE_URL });
         if (provider === 'anthropic') return await streamAnthropic(args);
+        if (provider === CLAUDE_CODE_PROVIDER) {
+          return await claudeCode.streamClaudeCode({
+            ...args,
+            image: stripDataUrl(args.imageDataUrl),
+            cliPath: (settings.claudeCode || {}).cliPath
+          });
+        }
         if (provider === 'gemini') return await streamGemini(args);
         if (provider === 'azure') return await streamAzure(args);
         throw new Error('unknown provider: ' + provider);
@@ -561,5 +573,6 @@ module.exports = {
   CURRENT_ANTHROPIC_DEFAULT_FAST,
   CURRENT_ANTHROPIC_DEFAULT_SMART,
   PUBLIK_PROVIDER,
+  CLAUDE_CODE_PROVIDER,
   isRateLimitError
 };

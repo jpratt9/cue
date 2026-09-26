@@ -112,7 +112,7 @@
 
       <!-- Tab bar -->
       <div class="s-tabs">
-        <button class="s-tab on" data-tab="keys">🔑 API Keys</button>
+        <button class="s-tab on" data-tab="keys">🔑 Provider</button>
         <button class="s-tab" data-tab="transcription">🔉 Audio</button>
         <button class="s-tab" data-tab="style">✨ Style</button>
         <button class="s-tab" data-tab="appearance">🌗 Appearance</button>
@@ -126,6 +126,7 @@
           <button data-provider="cerebras">Cerebras</button>
           <button data-provider="openai">OpenAI</button>
           <button data-provider="anthropic">Anthropic</button>
+          <button data-provider="claudecode">Claude Code</button>
           <button data-provider="gemini">Gemini</button>
           <button data-provider="groq">Groq</button>
           <button data-provider="custom">Custom</button>
@@ -135,7 +136,7 @@
           <button data-provider="azure">Azure AI</button>
         </div>
 
-        <label class="s-label">API keys &amp; URLs <span class="s-hint">stored locally · never sent to any server</span></label>
+        <label class="s-label" id="api-keys-label">API keys &amp; URLs <span class="s-hint">stored locally · never sent to any server</span></label>
         <div class="s-field" data-key-for="cerebras"><span>Cerebras</span><input id="key-cerebras" type="password" placeholder="csk-..." autocomplete="off" /></div>
         <div class="s-field" data-key-for="openai"><span>OpenAI</span><input id="key-openai" type="password" placeholder="sk-..." autocomplete="off" /></div>
         <div class="s-field" data-key-for="anthropic"><span>Anthropic</span><input id="key-anthropic" type="password" placeholder="sk-ant-..." autocomplete="off" /></div>
@@ -187,6 +188,11 @@
         <div id="azure-endpoint-settings" class="hidden">
           <label class="s-label" for="azure-endpoint">Azure endpoint <span class="s-hint">Azure OpenAI: https://&lt;resource&gt;.openai.azure.com/openai · AI Foundry: https://&lt;host&gt;.cognitiveservices.azure.com (cue adds /openai/v1)</span></label>
           <div class="s-field"><span>Endpoint</span><input id="azure-endpoint" type="text" placeholder="https://host.cognitiveservices.azure.com" autocomplete="off" /></div>
+        </div>
+
+        <div id="claudecode-settings" class="hidden">
+          <label class="s-label" for="claudecode-cli-path">Claude Code <span class="s-hint">no API key — runs the `claude` CLI with your existing session. Leave the path blank unless cue can't find it.</span></label>
+          <div class="s-field"><span>CLI path</span><input id="claudecode-cli-path" type="text" placeholder="auto-detect (~/.local/bin/claude)" autocomplete="off" /></div>
         </div>
 
         <label class="s-label">Models <span class="s-hint">fast = Smart off · smart = Smart on</span></label>
